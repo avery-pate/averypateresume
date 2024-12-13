@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ship Strikers</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            gap: 5px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #87CEEB;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+        .cell.hit {
+            background-color: #FF4500;
+        }
+        .cell.miss {
+            background-color: #808080;
+        }
+        .cell.ship {
+            background-color: #228B22;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .nav-links {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <a class="nav-link js-scroll-trigger" href="scratch.html">Travel Tips (Scratch Page)</a> <br>
+    <a class="nav-link js-scroll-trigger" href="../index.html">Resume</a>
+    <br>
+
+    <h1>Ship Strikers</h1>
+    <p>
+        Welcome to Ship Strikers! The goal is to sink all of your opponent's ships before they sink yours. 
+        Click on the cells of the computer's board to launch your strikes. The computer will automatically 
+        take its turn after yours. Hits are marked in red, misses in gray, and your ships in green (only visible on your board).
+        May the best strategist win!
+    </p>
+
+    <div style="text-align: center;">
+        <div>
+            <h2>Your Board</h2>
+            <div id="userBoard" class="board"></div>
+        </div>
+
+        <div>
+            <h2>Computer's Board</h2>
+            <div id="computerBoard" class="board"></div>
+        </div>
+    </div>
+
+    <button id="resetButton">Reset Game</button>
+
+    <p id="status"></p>
+
+    <script>
+        const BOARD_SIZE = 5;
+        const SHIP_COUNT = 3;
+
+        function createBoard(boardElement, clickable = false) {
+            const board = [];
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const row = [];
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    if (clickable) {
+                        cell.addEventListener('click', () => handleUserClick(cell));
+                    }
+                    boardElement.appendChild(cell);
+                    row.push({ cell, hasShip: false });
+                }
+                board.push(row);
+            }
+            return board;
+        }
+
+        function placeShips(board, isUserBoard = false) {
+            let shipsPlaced = 0;
+            while (shipsPlaced < SHIP_COUNT) {
+                const row = Math.floor(Math.random() * BOARD_SIZE);
+                const col = Math.floor(Math.random() * BOARD_SIZE);
+                if (!board[row][col].hasShip) {
+                    board[row][col].hasShip = true;
+                    if (isUserBoard) {
+                        board[row][col].cell.classList.add('ship');
+                    }
+                    shipsPlaced++;
+                }
+            }
+        }
+
+        function handleUserClick(cell) {
+            if (gameOver) return;
+            const row = +cell.dataset.row;
+            const col = +cell.dataset.col;
+
+            if (computerBoard[row][col].hit) return;
+            computerBoard[row][col].hit = true;
+
+            if (computerBoard[row][col].hasShip) {
+                cell.classList.add('hit');
+                userHits++;
+                updateStatus('You hit a ship!');
+            } else {
+                cell.classList.add('miss');
+                updateStatus('You missed.');
+            }
+
+            if (userHits === SHIP_COUNT) {
+                updateStatus('You win! Want to play again?');
+                gameOver = true;
+                return;
+            }
+
+            computerTurn();
+        }
+
+        function computerTurn() {
+            let row, col;
+            do {
+                row = Math.floor(Math.random() * BOARD_SIZE);
+                col = Math.floor(Math.random() * BOARD_SIZE);
+            } while (userBoard[row][col].hit);
+
+            userBoard[row][col].hit = true;
+
+            const cell = userBoard[row][col].cell;
+            if (userBoard[row][col].hasShip) {
+                cell.classList.add('hit');
+                computerHits++;
+                updateStatus('Computer hit your ship!');
+            } else {
+                cell.classList.add('miss');
+                updateStatus('Computer missed.');
+            }
+
+            if (computerHits === SHIP_COUNT) {
+                updateStatus('You lose! Want to try again?');
+                gameOver = true;
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function resetGame() {
+            userBoardElement.innerHTML = '';
+            computerBoardElement.innerHTML = '';
+            userBoard = createBoard(userBoardElement);
+            computerBoard = createBoard(computerBoardElement, true);
+
+            placeShips(userBoard, true); // Mark ships on the user's board
+            placeShips(computerBoard);
+
+            userHits = 0;
+            computerHits = 0;
+            gameOver = false;
+
+            updateStatus('Game reset. Let the battle begin!');
+        }
+
+        let userBoardElement = document.getElementById('userBoard');
+        let computerBoardElement = document.getElementById('computerBoard');
+        let userBoard, computerBoard;
+        let userHits = 0, computerHits = 0;
+        let gameOver = false;
+
+        document.getElementById('resetButton').addEventListener('click', resetGame);
+
+        resetGame();
+    </script>
+</body>
+</html>
